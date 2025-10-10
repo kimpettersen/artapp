@@ -168,6 +168,50 @@
       tap: true
     });
 
+// Be Leaflet forsøke å finne brukerens posisjon (via Geolocation API)
+map.locate({
+  setView: true,      // zoom kartet til brukerens posisjon automatisk
+  maxZoom: 14,        // ikke zoom for langt inn
+  enableHighAccuracy: true,
+  timeout: 8000,      // avbryt etter 8 sekunder
+  maximumAge: 0
+});
+
+// Når posisjonen er funnet
+map.on('locationfound', (e) => {
+  const radius = e.accuracy / 2;
+
+  // Marker brukerens posisjon
+  const userMarker = L.circleMarker(e.latlng, {
+    radius: 8,
+    fillColor: '#4fc3f7',
+    color: '#fff',
+    weight: 2,
+    opacity: 1,
+    fillOpacity: 0.9
+  }).addTo(map);
+
+  // Tegn en sirkel for presisjonsradius
+  L.circle(e.latlng, {
+    radius: radius,
+    color: '#4fc3f7',
+    weight: 1,
+    opacity: 0.3,
+    fillOpacity: 0.1
+  }).addTo(map);
+
+  // Popup for brukerens posisjon
+  userMarker.bindPopup(`Du er her (±${Math.round(radius)} m)`).openPopup();
+});
+
+// Hvis noe går galt (f.eks. bruker nekter tilgang)
+map.on('locationerror', (e) => {
+  console.warn('Kunne ikke finne posisjon:', e.message);
+  alert('Kunne ikke finne din posisjon – sjekk at du har gitt tilgang til posisjon.');
+});
+
+
+
     const tiles = L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
       {
@@ -182,82 +226,93 @@
     {
         artwork: "Vinternatt",
         location: "Hamburger Kunsthalle",
-        coords: [53.5552936, 10.0030010953872]  // koordinater for Hamburger Kunsthalle  [oai_citation:0‡coordinatesfinder.com](https://www.coordinatesfinder.com/coordinates/896267-hamburger-kunsthalle?utm_source=chatgpt.com)
+        coords: [53.5552936, 10.0030010953872],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Edvard_Munch_-_Winter_Night_-_MM.M.00456_-_Munch_Museum.jpg/330px-Edvard_Munch_-_Winter_Night_-_MM.M.00456_-_Munch_Museum.jpg"
     },
     {
         artwork: "Natt i Saint Cloud",
         location: "Guggenheim Bilbao Museum",
-        coords: [43.2691, -2.9340]  // estimat for Guggenheim Bilbao
+        coords: [43.2691, -2.9340],  // estimat for Guggenheim Bilbao
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Edvard_Munch_-_Night_in_Saint-Cloud_%281890%29%2C_NG.M.01111.jpg/500px-Edvard_Munch_-_Night_in_Saint-Cloud_%281890%29%2C_NG.M.01111.jpg"
     },
     {
         artwork: "Vampyr",
-        location: "Bærum / hjemme",
-        coords: [59.9127, 10.6310]  // grovt estimat i Bærum-området, må justeres
+        location: "Hjemme",
+        coords: [59.90953131942386, 10.523799997891706],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Edvard_Munch_-_Vampire_%281895%29_-_Google_Art_Project.jpg/960px-Edvard_Munch_-_Vampire_%281895%29_-_Google_Art_Project.jpg"
     },
     {
         artwork: "Aften på Karl Johan",
         location: "Berlinische Galerie",
-        coords: [52.5039, 13.39823]  // koordinater for Berlinische Galerie  [oai_citation:1‡Mapcarta](https://mapcarta.com/W33743630?utm_source=chatgpt.com)
+        coords: [52.5039, 13.39823],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Evening_on_Karl_Johan_Street.jpg/330px-Evening_on_Karl_Johan_Street.jpg"
     },
     {
         artwork: "På operasjonsbordet",
         location: "Berlinische Galerie",
-        coords: [52.5039, 13.39823]
+        coords: [52.5039, 13.39823],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Edvard_Munch_-_On_the_Operating_Table_-_MM.M.00022_-_Munch_Museum.jpg/330px-Edvard_Munch_-_On_the_Operating_Table_-_MM.M.00022_-_Munch_Museum.jpg"
     },
     {
         artwork: "Dødskamp",
         location: "National Museum in Warsaw",
-        coords: [52.23167, 21.02472]  // koordinater for National Museum Warsaw  [oai_citation:2‡Wikipedia](https://en.wikipedia.org/wiki/National_Museum_in_Warsaw?utm_source=chatgpt.com)
+        coords: [52.23167, 21.02472],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Edvard_Munch%2C_Dødskamp.JPG/330px-Edvard_Munch%2C_Dødskamp.JPG"
     },
     {
         artwork: "Madonna",
         location: "National Museum in Warsaw",
-        coords: [52.23167, 21.02472]
+        coords: [52.23167, 21.02472],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Edvard_Munch_-_Madonna_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Madonna_-_Google_Art_Project.jpg"
     },
     {
         artwork: "Marats død",
         location: "Birmingham Museum & Art Gallery",
-        coords: [52.4788, -1.8960]  // estimat for Birmingham Museum & Art Gallery
+        coords: [52.4788, -1.8960],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Edvard_Munch_-_The_Death_of_Marat_-_MM.M.00351_-_Munch_Museum.jpg/330px-Edvard_Munch_-_The_Death_of_Marat_-_MM.M.00351_-_Munch_Museum.jpg"
     },
     {
         artwork: "Kvinnen",
         location: "Manchester Art Gallery",
-        coords: [53.4808, -2.2379]  // estimat for Manchester Art Gallery
+        coords: [53.4808, -2.2379],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Edvard_Munch_-_Woman_-_MM.M.00375_-_Munch_Museum.jpg/330px-Edvard_Munch_-_Woman_-_MM.M.00375_-_Munch_Museum.jpg"
     },
     {
         artwork: "Døden i sykeværelset",
         location: "Musée Matisse",
-        coords: [43.2886, 5.3840]  // estimat for Musée Matisse, Nice (for eksempel) — juster om det er en annen by
-    },
-    {
-        artwork: "Løsrivelse",
-        location: "Musée d’Orsay",
-        coords: [48.8600, 2.3266]  // koordinater for Musée d’Orsay, Paris
+        coords: [43.2886, 5.3840],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Edvard_Munch_-_Death_in_the_Sickroom.jpg/330px-Edvard_Munch_-_Death_in_the_Sickroom.jpg"
+
     },
     {
         artwork: "Fortvilelse",
         location: "Trondheim kunstmuseum",
-        coords: [63.4270, 10.3951]  // estimat for Trondheim kunstmuseum (Trondheim sentrum)  [oai_citation:3‡Wikipedia](https://en.wikipedia.org/wiki/Trondheim_Art_Museum?utm_source=chatgpt.com)
+        coords: [63.4270, 10.3951],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Edvard_Munch_-_Despair_%281894%29.jpg/250px-Edvard_Munch_-_Despair_%281894%29.jpg"
     },
     {
-        artwork: "Morderen",
+        artwork: "Døden og barnet",
         location: "Munch-museet",
-        coords: [59.9070, 10.7525]  // estimat for Munch-museet i Oslo, Bjørvika  [oai_citation:4‡Wikipedia](https://en.wikipedia.org/wiki/Munch_Museum?utm_source=chatgpt.com)
+        coords: [59.9070, 10.7525],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Munch%2C_The_dead_mother_and_the_child.jpg/330px-Munch%2C_The_dead_mother_and_the_child.jpg"
     },
     {
         artwork: "Angst",
         location: "Henie Onstad Kunstsenter",
-        coords: [59.8797, 10.4380]  // estimat for Henie Onstad Kunstsenter, Høvikodden
+        coords: [59.8797, 10.4380],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Edvard_Munch_-_Anxiety_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Anxiety_-_Google_Art_Project.jpg"
     },
     {
         artwork: "Selvportrett i helvette",
         location: "Budapest",
-        coords: [47.4979, 19.0402]  // sentrum av Budapest som estimering
+        coords: [47.4979, 19.0402],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Edvard_Munch_-_Self-Portrait_in_Hell_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Self-Portrait_in_Hell_-_Google_Art_Project.jpg"
     },
     {
         artwork: "Døden og barnet",
         location: "Museum voor Schone Kunsten Gent",
-        coords: [51.0569, 3.7174]  // koordinater for MSK Gent  [oai_citation:5‡Wikipedia](https://en.wikipedia.org/wiki/Museum_of_Fine_Arts%2C_Ghent?utm_source=chatgpt.com)
+        coords: [51.0569, 3.7174],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Edvard_Munch_-_Death_and_the_Child_%281899%29%2C_Kunsthalle_Bremen.jpg/250px-Edvard_Munch_-_Death_and_the_Child_%281899%29%2C_Kunsthalle_Bremen.jpg"
     }
     ];
 
@@ -275,6 +330,7 @@
         <div class="art-popup">
           <h3>${p.artwork}</h3>
           <p>${p.location}<p/>
+          <img alt="Maleribilde for ${p.artwork}" src="${p.img}">
         </div>`;
       m.bindPopup(popupHtml, { closeButton: true, autoPan: true });
       return m;
