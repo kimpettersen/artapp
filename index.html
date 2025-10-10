@@ -171,7 +171,7 @@
 // Be Leaflet forsøke å finne brukerens posisjon (via Geolocation API)
 map.locate({
   setView: true,      // zoom kartet til brukerens posisjon automatisk
-  maxZoom: 14,        // ikke zoom for langt inn
+  maxZoom: 19,        // ikke zoom for langt inn
   enableHighAccuracy: true,
   timeout: 8000,      // avbryt etter 8 sekunder
   maximumAge: 0
@@ -201,13 +201,13 @@ map.on('locationfound', (e) => {
   }).addTo(map);
 
   // Popup for brukerens posisjon
-  userMarker.bindPopup(`Du er her (±${Math.round(radius)} m)`).openPopup();
+//   userMarker.bindPopup(`Du er her (±${Math.round(radius)} m)`).openPopup();
 });
 
 // Hvis noe går galt (f.eks. bruker nekter tilgang)
 map.on('locationerror', (e) => {
   console.warn('Kunne ikke finne posisjon:', e.message);
-  alert('Kunne ikke finne din posisjon – sjekk at du har gitt tilgang til posisjon.');
+//   alert('Kunne ikke finne din posisjon – sjekk at du har gitt tilgang til posisjon.');
 });
 
 
