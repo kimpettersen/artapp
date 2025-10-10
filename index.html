@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Stjålne malerier – live tracking</title>
+
+  <!-- Leaflet CSS (CDN) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin="anonymous"
+  />
+
+  <style>
+    /* Fullscreen, ren og filmvennlig look */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #0b0c0e; /* bakgrunn hvis kart ikke har lastet */
+    }
+    #map {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Minimal UI – flytende bar med tittel og fullscreen-knapp */
+    .topbar {
+      position: fixed;
+      top: env(safe-area-inset-top, 12px);
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(18, 18, 22, 0.6);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px 12px;
+      z-index: 5000;
+      color: #eaeaea;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      font-size: 14px;
+      line-height: 1.2;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.95;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f45;
+      box-shadow: 0 0 0 2px rgba(255, 68, 85, 0.3);
+    }
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font: inherit;
+      cursor: pointer;
+    }
+    .btn:active { transform: translateY(1px); }
+
+    /* Leaflet tweaks – bare zoomkontroller, liten attribution */
+    .leaflet-control-attribution {
+      background: rgba(18,18,22,0.6) !important;
+      color: #bdbdbd !important;
+      border-radius: 10px !important;
+      padding: 2px 6px !important;
+      font-size: 10px !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+    }
+    .leaflet-control-zoom a {
+      background: rgba(18,18,22,0.7);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: none;
+    }
+    .leaflet-control-zoom a:hover { background: rgba(18,18,22,0.9); }
+
+    /* Minimal markør som pulserer svakt (filmvennlig) */
+    .pulse-marker {
+      width: 14px;
+      height: 14px;
+      background: #ff4455;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(255,68,85,0.7);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255,68,85,0.6); }
+      70% { box-shadow: 0 0 0 16px rgba(255,68,85,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,68,85,0); }
+    }
+
+    /* Popup med litt typografi */
+    .art-popup {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: #111;
+    }
+    .art-popup h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .art-popup img {
+      width: 220px;
+      max-width: 70vw;
+      height: auto;
+      border-radius: 10px;
+      display: block;
+      border: 1px solid #ddd;
+    }
+
+    /* iOS safe-area help */
+    @supports (padding: max(0px)) {
+      .topbar { padding-top: max(10px, env(safe-area-inset-top)); }
+    }
+  </style>
+</head>
+<body>
+  <div id="map" role="application" aria-label="Kart over sporingspunkter for malerier"></div>
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <span>Stjålne malerier – Live</span>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn" id="btnFit">Zoom til alle</button>
+      <button class="btn" id="btnFull">Fullskjerm</button>
+    </div>
+  </div>
+
+  <!-- Leaflet JS (CDN) -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin="anonymous"
+  ></script>
+
+  <script>
+    // ====== Basiskart (minimal detaljer) med Carto "dark_nolabels" ======
+    // Merk: Krever internett-tilgang til tile-server. Attribution beholdes.
+    const map = L.map('map', {
+      zoomControl: true,
+      scrollWheelZoom: true,
+      dragging: true,
+      tap: true
+    });
+
+    const tiles = L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+      {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> ' +
+          '& <a href="https://carto.com/attributions">CARTO</a>'
+      }
+    ).addTo(map);
+
+    const points = [
+      {
+        city: 'Oslo – Rådhuset',
+        coords: [59.9133, 10.7389],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg/500px-Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg"
+      },
+      {
+        city: 'Oslo – Grünerløkka',
+        coords: [59.9279, 10.7591],
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Edvard_Munch_-_Madonna_%281894-1895%29.jpg/500px-Edvard_Munch_-_Madonna_%281894-1895%29.jpg"
+      },
+      {
+        city: 'Skien – Sentrum',
+        coords: [59.2096, 9.6090],
+        img: "https://upload.wikimedia.org/wikipedia/commons/4/47/Edvard_Munch_-_Starry_Night_%281922–24%29.jpg"
+      }
+    ];
+
+    // DivIcon for ren, pulserende markør
+    const dotIcon = L.divIcon({
+      className: 'pulse-marker',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    // Legg til markører og popups
+    const markers = points.map(p => {
+      const m = L.marker(p.coords, { icon: dotIcon }).addTo(map);
+      const popupHtml = `
+        <div class="art-popup">
+          <h3>${p.city}</h3>
+          <img alt="Maleribilde for ${p.city}" src="${p.img}">
+        </div>`;
+      m.bindPopup(popupHtml, { closeButton: true, autoPan: true });
+      return m;
+    });
+
+    // Fit til alle punkter ved oppstart
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.2));
+
+    // UI-knapper
+    document.getElementById('btnFit').addEventListener('click', () => {
+      map.fitBounds(group.getBounds().pad(0.2));
+    });
+
+    // Fullscreen toggle
+    const mapEl = document.getElementById('map');
+    function toggleFull() {
+      if (!document.fullscreenElement) {
+        (mapEl.requestFullscreen && mapEl.requestFullscreen()) ||
+        (mapEl.webkitRequestFullscreen && mapEl.webkitRequestFullscreen());
+      } else {
+        (document.exitFullscreen && document.exitFullscreen()) ||
+        (document.webkitExitFullscreen && document.webkitExitFullscreen());
+      }
+    }
+    document.getElementById('btnFull').addEventListener('click', toggleFull);
+
+    // Dobbelttrykk for fullskjerm (mobil)
+    let lastTap = 0;
+    mapEl.addEventListener('touchend', () => {
+      const now = Date.now();
+      if (now - lastTap < 350) toggleFull();
+      lastTap = now;
+    }, { passive: true });
+  </script>
+</body>
+</html>
