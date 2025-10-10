@@ -179,21 +179,86 @@
     ).addTo(map);
 
     const points = [
-      {
-        city: 'Oslo – Rådhuset',
-        coords: [59.9133, 10.7389],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg/500px-Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg"
-      },
-      {
-        city: 'Oslo – Grünerløkka',
-        coords: [59.9279, 10.7591],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Edvard_Munch_-_Madonna_%281894-1895%29.jpg/500px-Edvard_Munch_-_Madonna_%281894-1895%29.jpg"
-      },
-      {
-        city: 'Skien – Sentrum',
-        coords: [59.2096, 9.6090],
-        img: "https://upload.wikimedia.org/wikipedia/commons/4/47/Edvard_Munch_-_Starry_Night_%281922–24%29.jpg"
-      }
+    {
+        artwork: "Vinternatt",
+        location: "Hamburger Kunsthalle",
+        coords: [53.5552936, 10.0030010953872]  // koordinater for Hamburger Kunsthalle  [oai_citation:0‡coordinatesfinder.com](https://www.coordinatesfinder.com/coordinates/896267-hamburger-kunsthalle?utm_source=chatgpt.com)
+    },
+    {
+        artwork: "Natt i Saint Cloud",
+        location: "Guggenheim Bilbao Museum",
+        coords: [43.2691, -2.9340]  // estimat for Guggenheim Bilbao
+    },
+    {
+        artwork: "Vampyr",
+        location: "Bærum / hjemme",
+        coords: [59.9127, 10.6310]  // grovt estimat i Bærum-området, må justeres
+    },
+    {
+        artwork: "Aften på Karl Johan",
+        location: "Berlinische Galerie",
+        coords: [52.5039, 13.39823]  // koordinater for Berlinische Galerie  [oai_citation:1‡Mapcarta](https://mapcarta.com/W33743630?utm_source=chatgpt.com)
+    },
+    {
+        artwork: "På operasjonsbordet",
+        location: "Berlinische Galerie",
+        coords: [52.5039, 13.39823]
+    },
+    {
+        artwork: "Dødskamp",
+        location: "National Museum in Warsaw",
+        coords: [52.23167, 21.02472]  // koordinater for National Museum Warsaw  [oai_citation:2‡Wikipedia](https://en.wikipedia.org/wiki/National_Museum_in_Warsaw?utm_source=chatgpt.com)
+    },
+    {
+        artwork: "Madonna",
+        location: "National Museum in Warsaw",
+        coords: [52.23167, 21.02472]
+    },
+    {
+        artwork: "Marats død",
+        location: "Birmingham Museum & Art Gallery",
+        coords: [52.4788, -1.8960]  // estimat for Birmingham Museum & Art Gallery
+    },
+    {
+        artwork: "Kvinnen",
+        location: "Manchester Art Gallery",
+        coords: [53.4808, -2.2379]  // estimat for Manchester Art Gallery
+    },
+    {
+        artwork: "Døden i sykeværelset",
+        location: "Musée Matisse",
+        coords: [43.2886, 5.3840]  // estimat for Musée Matisse, Nice (for eksempel) — juster om det er en annen by
+    },
+    {
+        artwork: "Løsrivelse",
+        location: "Musée d’Orsay",
+        coords: [48.8600, 2.3266]  // koordinater for Musée d’Orsay, Paris
+    },
+    {
+        artwork: "Fortvilelse",
+        location: "Trondheim kunstmuseum",
+        coords: [63.4270, 10.3951]  // estimat for Trondheim kunstmuseum (Trondheim sentrum)  [oai_citation:3‡Wikipedia](https://en.wikipedia.org/wiki/Trondheim_Art_Museum?utm_source=chatgpt.com)
+    },
+    {
+        artwork: "Morderen",
+        location: "Munch-museet",
+        coords: [59.9070, 10.7525]  // estimat for Munch-museet i Oslo, Bjørvika  [oai_citation:4‡Wikipedia](https://en.wikipedia.org/wiki/Munch_Museum?utm_source=chatgpt.com)
+    },
+    {
+        artwork: "Angst",
+        location: "Henie Onstad Kunstsenter",
+        coords: [59.8797, 10.4380]  // estimat for Henie Onstad Kunstsenter, Høvikodden
+    },
+    {
+        artwork: "Selvportrett i helvette",
+        location: "Budapest",
+        coords: [47.4979, 19.0402]  // sentrum av Budapest som estimering
+    },
+    {
+        artwork: "Døden og barnet",
+        location: "Museum voor Schone Kunsten Gent",
+        coords: [51.0569, 3.7174]  // koordinater for MSK Gent  [oai_citation:5‡Wikipedia](https://en.wikipedia.org/wiki/Museum_of_Fine_Arts%2C_Ghent?utm_source=chatgpt.com)
+    }
     ];
 
     // DivIcon for ren, pulserende markør
@@ -208,8 +273,8 @@
       const m = L.marker(p.coords, { icon: dotIcon }).addTo(map);
       const popupHtml = `
         <div class="art-popup">
-          <h3>${p.city}</h3>
-          <img alt="Maleribilde for ${p.city}" src="${p.img}">
+          <h3>${p.artwork}</h3>
+          <p>${p.location}<p/>
         </div>`;
       m.bindPopup(popupHtml, { closeButton: true, autoPan: true });
       return m;
