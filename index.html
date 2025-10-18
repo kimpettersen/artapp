@@ -193,11 +193,12 @@
         maximumAge: 0
     });
 
-    const myPosition = null
+    let myPosition;
     // Når posisjonen er funnet
     map.on('locationfound', (e) => {
         const radius = e.accuracy / 2;
         myPosition = e.latlng
+        console.log('myPos: ', myPosition)
         // Marker brukerens posisjon
         const userMarker = L.circleMarker(e.latlng, {
             radius: 8,
@@ -224,7 +225,7 @@
     // Hvis noe går galt (f.eks. bruker nekter tilgang)
     map.on('locationerror', (e) => {
     console.warn('Kunne ikke finne posisjon:', e.message);
-    //   alert('Kunne ikke finne din posisjon – sjekk at du har gitt tilgang til posisjon.');
+         console.log('Kunne ikke finne din posisjon – sjekk at du har gitt tilgang til posisjon.');
     });
 
 
@@ -380,9 +381,13 @@
     const mapEl = document.getElementById('map');
     function locateMe() {
         if (myPosition !== null) {
-            map.flyTo(myPosition)
+            map.flyTo(
+                myPosition,
+                10,
+                { duration: .5 }
+            )
         } else {
-            alert(':()')
+            console.log("myPosition is unknown: ", myPosition)
         }
     }
     document.getElementById('btnLocate').addEventListener('click', locateMe);
