@@ -194,13 +194,14 @@
     });
 
     let myPosition;
+    let myCircle;
     // Når posisjonen er funnet
     map.on('locationfound', (e) => {
         const radius = e.accuracy / 2;
         myPosition = e.latlng
         console.log('myPos: ', myPosition)
         // Marker brukerens posisjon
-        const userMarker = L.circleMarker(e.latlng, {
+        myCircle = L.circleMarker(e.latlng, {
             radius: 8,
             fillColor: '#4fc3f7',
             color: '#fff',
@@ -210,13 +211,13 @@
         }).addTo(map);
 
         // Tegn en sirkel for presisjonsradius
-        L.circle(e.latlng, {
-            radius: radius,
-            color: '#4fc3f7',
-            weight: 1,
-            opacity: 0.3,
-            fillOpacity: 0.1
-        }).addTo(map);
+        // L.circle(e.latlng, {
+        //     radius: radius,
+        //     color: '#4fc3f7',
+        //     weight: 1,
+        //     opacity: 0.3,
+        //     fillOpacity: 0.1
+        // }).addTo(map);
 
         // Popup for brukerens posisjon
         //   userMarker.bindPopup(`Du er her (±${Math.round(radius)} m)`).openPopup();
@@ -380,7 +381,9 @@
     // Fullscreen toggle
     const mapEl = document.getElementById('map');
     function locateMe() {
-        if (myPosition !== null) {
+        console.log(myCircle)
+        myCircle.setStyle({ opacity: 0, fillOpacity: 0 })
+        if (myPosition) {
             map.flyTo(
                 myPosition,
                 10,
@@ -389,6 +392,12 @@
         } else {
             console.log("myPosition is unknown: ", myPosition)
         }
+          map.once('zoomend', () => {
+            myCircle.setStyle({ 
+              opacity: 1,
+              fillOpacity: 0.9
+            });
+        });
     }
     document.getElementById('btnLocate').addEventListener('click', locateMe);
 
