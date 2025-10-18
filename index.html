@@ -28,6 +28,19 @@
       inset: 0;
       width: 100vw;
       height: 100vh;
+      /* backface-visibility: hidden;
+      transform: translateZ(0);  */
+    }
+    
+    /* Unngå hvitt når fliser ikke er lastet / under zoom */
+    #map,
+    .leaflet-container,
+    .leaflet-pane,
+    .leaflet-layer {
+        background: #0b0c0e; /* match resten av UI-et ditt */
+    }
+    .leaflet-tile {
+        background-color: #0b0c0e !important; /* bakgrunn bak selve tile-bildet */
     }
 
     /* Minimal UI – flytende bar med tittel og fullscreen-knapp */
@@ -162,10 +175,13 @@
     // ====== Basiskart (minimal detaljer) med Carto "dark_nolabels" ======
     // Merk: Krever internett-tilgang til tile-server. Attribution beholdes.
     const map = L.map('map', {
-      zoomControl: true,
-      scrollWheelZoom: true,
-      dragging: true,
-      tap: true
+        zoomControl: true,
+        scrollWheelZoom: true,
+        dragging: true,
+        tap: true,
+        zoomAnimation: false,       // slå av zoom-animasjon (fjerner mye flimmer)
+        markerZoomAnimation: false, // markers hopper ikke
+        fadeAnimation: true
     });
 
 // Be Leaflet forsøke å finne brukerens posisjon (via Geolocation API)
@@ -213,14 +229,22 @@ map.on('locationerror', (e) => {
 
 
     const tiles = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+    //   'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', // mørk
+    // 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', // lys minimalistisk
+    // 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', // lys med markers
+    'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
+
+
       {
         maxZoom: 19,
+        keepBuffer: 6,            // behold flere tile-ringer utenfor skjerm
+        updateWhenZooming: false,
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> ' +
-          '& <a href="https://carto.com/attributions">CARTO</a>'
-      }
-    ).addTo(map);
+          '& <a href="https://carto.com/attributions">CARTO</a>',
+        noWrap: true,         // ikke gjenta verden horisontalt
+        bounds: [[-85,-180],[85,180]] // begrens til projeksjonsområde
+    }).addTo(map);
 
     const points = [
     {
