@@ -354,7 +354,15 @@
           <p>${p.location}<p/>
           <img alt="Maleribilde for ${p.artwork}" src="${p.img}">
         </div>`;
-      m.bindPopup(popupHtml, { closeButton: true, autoPan: true });
+      const POPUP_OPTS = {
+        autoPan: true,
+        keepInView: true,
+        // justér tallene til høyden/bredden på topbaren din
+        autoPanPaddingTopLeft: [12, 80],
+        autoPanPaddingBottomRight: [12, 12],
+        closeButton: true
+      };
+      m.bindPopup(popupHtml, POPUP_OPTS);
       return m;
     });
 
