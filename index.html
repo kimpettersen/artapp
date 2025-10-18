@@ -160,7 +160,7 @@
     </div>
     <div style="display:flex; gap:8px;">
       <button class="btn" id="btnFit">Zoom til alle</button>
-      <button class="btn" id="btnFull">Fullskjerm</button>
+      <button class="btn" id="btnLocate">⦿</button>
     </div>
   </div>
 
@@ -193,10 +193,11 @@
         maximumAge: 0
     });
 
+    const myPosition = null
     // Når posisjonen er funnet
     map.on('locationfound', (e) => {
         const radius = e.accuracy / 2;
-
+        myPosition = e.latlng
         // Marker brukerens posisjon
         const userMarker = L.circleMarker(e.latlng, {
             radius: 8,
@@ -377,24 +378,22 @@
 
     // Fullscreen toggle
     const mapEl = document.getElementById('map');
-    function toggleFull() {
-      if (!document.fullscreenElement) {
-        (mapEl.requestFullscreen && mapEl.requestFullscreen()) ||
-        (mapEl.webkitRequestFullscreen && mapEl.webkitRequestFullscreen());
-      } else {
-        (document.exitFullscreen && document.exitFullscreen()) ||
-        (document.webkitExitFullscreen && document.webkitExitFullscreen());
-      }
+    function locateMe() {
+        if (myPosition !== null) {
+            map.flyTo(myPosition)
+        } else {
+            alert(':()')
+        }
     }
-    document.getElementById('btnFull').addEventListener('click', toggleFull);
+    document.getElementById('btnLocate').addEventListener('click', locateMe);
 
     // Dobbelttrykk for fullskjerm (mobil)
-    let lastTap = 0;
-    mapEl.addEventListener('touchend', () => {
-      const now = Date.now();
-      if (now - lastTap < 350) toggleFull();
-      lastTap = now;
-    }, { passive: true });
+    // let lastTap = 0;
+    // mapEl.addEventListener('touchend', () => {
+    //   const now = Date.now();
+    //   if (now - lastTap < 350) locateMe();
+    //   lastTap = now;
+    // }, { passive: true });
   </script>
 </body>
 </html>
