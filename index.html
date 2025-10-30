@@ -7,7 +7,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Utleide malerier – live tracking</title>
 
-  <!-- Leaflet CSS (CDN) -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -16,70 +15,23 @@
   />
 
   <style>
-    /* Fullscreen, ren og filmvennlig look */
     html, body {
       height: 100%;
       margin: 0;
       padding: 0;
-      background: #0b0c0e; /* bakgrunn hvis kart ikke har lastet */
+      background: #0b0c0e;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
     #map {
       position: fixed;
       inset: 0;
       width: 100vw;
       height: 100vh;
-      /* backface-visibility: hidden;
-      transform: translateZ(0);  */
     }
-    
-    /* Unngå hvitt når fliser ikke er lastet / under zoom */
-    #map,
-    .leaflet-container,
-    .leaflet-pane,
-    .leaflet-layer {
-        background: #0b0c0e; /* match resten av UI-et ditt */
-    }
-    .leaflet-tile {
-        background-color: #0b0c0e !important; /* bakgrunn bak selve tile-bildet */
-    }
+    /* Unngå hvitt “flash” bak tiles */
+    #map, .leaflet-container, .leaflet-pane, .leaflet-layer { background:#0b0c0e; }
+    .leaflet-tile { background-color:#0b0c0e !important; }
 
-    /* Minimal UI – flytende bar med tittel og fullscreen-knapp */
-    .topbar {
-      position: fixed;
-      top: env(safe-area-inset-top, 12px);
-      left: 0px;
-      right: 0px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      background: rgba(18, 18, 22, 0.6);
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-      border: 1px solid rgba(255,255,255,0.08);
-      /* border-radius: 14px; */
-      padding: 10px 12px;
-      z-index: 5000;
-      color: #eaeaea;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      font-size: 14px;
-      line-height: 1.2;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      opacity: 0.95;
-      font-weight: 600;
-      letter-spacing: 0.2px;
-    }
-    .brand-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #f45;
-      box-shadow: 0 0 0 2px rgba(255, 68, 85, 0.3);
-    }
     .btn {
       appearance: none;
       border: 1px solid rgba(255,255,255,0.12);
@@ -92,30 +44,10 @@
     }
     .btn:active { transform: translateY(1px); }
 
-    /* Leaflet tweaks – bare zoomkontroller, liten attribution */
-    .leaflet-control-attribution {
-      background: rgba(18,18,22,0.6) !important;
-      color: #bdbdbd !important;
-      border-radius: 10px !important;
-      padding: 2px 6px !important;
-      font-size: 10px !important;
-      border: 1px solid rgba(255,255,255,0.08) !important;
-    }
-    .leaflet-control-zoom a {
-      background: rgba(18,18,22,0.7);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: none;
-    }
-    .leaflet-control-zoom a:hover { background: rgba(18,18,22,0.9); }
-
-    /* Minimal markør som pulserer svakt (filmvennlig) */
+    /* Pulsmarkør */
     .pulse-marker {
-      width: 14px;
-      height: 14px;
-      background: #ff4455;
-      border: 2px solid #fff;
-      border-radius: 50%;
+      width: 14px; height: 14px;
+      background: #ff4455; border: 2px solid #fff; border-radius: 50%;
       box-shadow: 0 0 0 0 rgba(255,68,85,0.7);
       animation: pulse 2s infinite;
     }
@@ -125,46 +57,102 @@
       100% { box-shadow: 0 0 0 0 rgba(255,68,85,0); }
     }
 
-    /* Popup med litt typografi */
-    .art-popup {
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      color: #111;
-    }
-    .art-popup h3 {
-      margin: 0 0 8px 0;
-      font-size: 16px;
-      line-height: 1.2;
-    }
+    .art-popup h3 { margin: 0 0 8px; font-size: 16px; line-height: 1.2; }
     .art-popup img {
-      width: 220px;
-      max-width: 70vw;
-      height: auto;
-      border-radius: 10px;
-      display: block;
-      border: 1px solid #ddd;
+      width: 220px; max-width: 70vw; height: auto;
+      border-radius: 10px; display: block; border: 1px solid #ddd;
     }
 
-    /* iOS safe-area help */
-    @supports (padding: max(0px)) {
-      .topbar { padding-top: max(10px, env(safe-area-inset-top)); }
+    /* ---------- Bottom sheet (footer) ---------- */
+    .sheet {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: 0;
+      height: 64px;                 /* start-høyde (min) */
+      max-height: 85dvh;            /* hvor mye den kan dras opp */
+      background: rgba(18,18,22,0.75);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: #eaeaea;
+      z-index: 5000;
+      transition: height .2s ease;
+      touch-action: none;           /* for smooth pointer events på mobil */
+    }
+    .sheet.dragging { transition: none; }
+
+    .sheet-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 10px 12px;
+      padding-bottom: 8px;
+    }
+    .sheet-title {
+      display:flex; align-items:center; gap:8px; font-weight:600; letter-spacing: .2px;
+    }
+    .brand-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background:#f45; box-shadow: 0 0 0 2px rgba(255, 68, 85, 0.3);
+    }
+    .handle {
+      position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+      width: 44px; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.25);
+    }
+    .sheet-actions { display:flex; gap:8px; }
+
+    .sheet-body {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 6px 8px 10px 8px;
+      overflow: auto;
+      height: calc(100% - 48px); /* resten etter header */
+    }
+
+    .list {
+      margin: 6px 0 0 0; padding: 0; list-style: none;
+      display: grid; gap: 6px;
+    }
+    .list-item {
+      display:flex; align-items:center; justify-content: space-between; gap:10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .list-item:active { transform: translateY(1px); }
+    .list-title { font-weight:600; font-size:14px; color:#fff; }
+    .list-sub { font-size:12px; color:#cfcfcf; opacity: .9; }
+    .go { font-size:12px; padding:6px 8px; border-radius:8px; }
+
+    .leaflet-control-attribution {
+      background: rgba(18,18,22,0.6) !important;
+      color:#bdbdbd !important; border-radius: 10px !important;
+      padding: 2px 6px !important; font-size:10px !important;
+      border:1px solid rgba(255,255,255,0.08) !important;
+      margin-bottom: 6px !important; /* litt opp så den ikke ligger helt i bunnen */
     }
   </style>
 </head>
 <body>
   <div id="map" role="application" aria-label="Kart over sporingspunkter for malerier"></div>
 
-  <div class="topbar">
-    <div class="brand">
-      <span class="brand-dot" aria-hidden="true"></span>
-      <span>Utleide malerier – Live</span>
+  <!-- Bottom sheet -->
+  <div class="sheet" id="sheet" style="height:64px;">
+    <div class="handle" id="handle" aria-hidden="true"></div>
+    <div class="sheet-header" id="sheetHeader">
+      <div class="sheet-title">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span>Utleide malerier – Live</span>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn" id="btnLocate" title="Min posisjon">⦿</button>
+        <button class="btn" id="btnFit" title="Se alle">Se alle</button>
+      </div>
     </div>
-    <div style="display:flex; gap:8px;">
-        <button class="btn" id="btnLocate">⦿</button>
-      <button class="btn" id="btnFit">Se alle</button>
+    <div class="sheet-body" id="sheetBody">
+      <ul class="list" id="artList"></ul>
     </div>
   </div>
 
-  <!-- Leaflet JS (CDN) -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -172,243 +160,207 @@
   ></script>
 
   <script>
-    // ====== Basiskart (minimal detaljer) med Carto "dark_nolabels" ======
-    // Merk: Krever internett-tilgang til tile-server. Attribution beholdes.
+    /* ----------------- Leaflet init ----------------- */
     const map = L.map('map', {
-        zoomControl: true,
-        scrollWheelZoom: true,
-        dragging: true,
-        tap: true,
-        zoomAnimation: false,       // slå av zoom-animasjon (fjerner mye flimmer)
-        markerZoomAnimation: false, // markers hopper ikke
-        fadeAnimation: true,
-        zoomControl: false
+      zoomControl: false,          // vi gjemmer +/-
+      scrollWheelZoom: true,
+      dragging: true,
+      tap: true,
+      zoomAnimation: false,
+      markerZoomAnimation: false,
+      fadeAnimation: true
     });
-
-    // Be Leaflet forsøke å finne brukerens posisjon (via Geolocation API)
-    map.locate({
-        //setView: true,      // zoom kartet til brukerens posisjon automatisk
-        maxZoom: 7,        // ikke zoom for langt inn
-        enableHighAccuracy: true,
-        timeout: 8000,      // avbryt etter 8 sekunder
-        maximumAge: 0
-    });
-
-    let myPosition;
-    let myCircle;
-    // Når posisjonen er funnet
-    map.on('locationfound', (e) => {
-        const radius = e.accuracy / 2;
-        myPosition = e.latlng
-        console.log('myPos: ', myPosition)
-        // Marker brukerens posisjon
-        myCircle = L.circleMarker(e.latlng, {
-            radius: 8,
-            fillColor: '#4fc3f7',
-            color: '#fff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.9
-        }).addTo(map);
-
-        // Tegn en sirkel for presisjonsradius
-        // L.circle(e.latlng, {
-        //     radius: radius,
-        //     color: '#4fc3f7',
-        //     weight: 1,
-        //     opacity: 0.3,
-        //     fillOpacity: 0.1
-        // }).addTo(map);
-
-        // Popup for brukerens posisjon
-        //   userMarker.bindPopup(`Du er her (±${Math.round(radius)} m)`).openPopup();
-    });
-
-    // Hvis noe går galt (f.eks. bruker nekter tilgang)
-    map.on('locationerror', (e) => {
-    console.warn('Kunne ikke finne posisjon:', e.message);
-         console.log('Kunne ikke finne din posisjon – sjekk at du har gitt tilgang til posisjon.');
-    });
-
-
 
     const tiles = L.tileLayer(
-    // 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', // mørk
-    // 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', // lys minimalistisk
-    // 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', // lys med markers
-    'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
+      'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
       {
         maxZoom: 19,
-        keepBuffer: 6,            // behold flere tile-ringer utenfor skjerm
+        keepBuffer: 6,
         updateWhenZooming: false,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> ' +
-          '& <a href="https://carto.com/attributions">CARTO</a>',
-        noWrap: true,         // ikke gjenta verden horisontalt
-        bounds: [[-85,-180],[85,180]] // begrens til projeksjonsområde
-    }).addTo(map);
+        attribution: '&copy; OSM & Stadia Maps',
+        noWrap: true,
+        bounds: [[-85,-180],[85,180]]
+      }
+    ).addTo(map);
 
+    // Geolokasjon
+    map.locate({ maxZoom: 7, enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+    let myPosition = null, myCircle = null;
+
+    map.on('locationfound', (e) => {
+      myPosition = e.latlng;
+      myCircle = L.circleMarker(e.latlng, {
+        radius: 8, fillColor: '#4fc3f7', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
+      }).addTo(map);
+    });
+    map.on('locationerror', (e) => console.warn('Posisjon-feil:', e.message));
+
+    /* ----------------- Data ----------------- */
     const points = [
-    {
-        artwork: "Vinternatt",
-        location: "Hamburger Kunsthalle",
-        coords: [53.5552936, 10.0030010953872],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Edvard_Munch_-_Winter_Night_-_MM.M.00456_-_Munch_Museum.jpg/330px-Edvard_Munch_-_Winter_Night_-_MM.M.00456_-_Munch_Museum.jpg"
-    },
-    {
-        artwork: "Natt i Saint Cloud",
-        location: "Guggenheim Bilbao Museum",
-        coords: [43.2691, -2.9340],  // estimat for Guggenheim Bilbao
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Edvard_Munch_-_Night_in_Saint-Cloud_%281890%29%2C_NG.M.01111.jpg/500px-Edvard_Munch_-_Night_in_Saint-Cloud_%281890%29%2C_NG.M.01111.jpg"
-    },
-    {
-        artwork: "Vampyr",
-        location: "Hjemme",
-        coords: [59.90953131942386, 10.523799997891706],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Edvard_Munch_-_Vampire_%281895%29_-_Google_Art_Project.jpg/960px-Edvard_Munch_-_Vampire_%281895%29_-_Google_Art_Project.jpg"
-    },
-    {
-        artwork: "Aften på Karl Johan",
-        location: "Berlinische Galerie",
-        coords: [52.5039, 13.39823],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Evening_on_Karl_Johan_Street.jpg/330px-Evening_on_Karl_Johan_Street.jpg"
-    },
-    {
-        artwork: "På operasjonsbordet",
-        location: "Berlinische Galerie",
-        coords: [52.5039, 13.39823],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Edvard_Munch_-_On_the_Operating_Table_-_MM.M.00022_-_Munch_Museum.jpg/330px-Edvard_Munch_-_On_the_Operating_Table_-_MM.M.00022_-_Munch_Museum.jpg"
-    },
-    {
-        artwork: "Dødskamp",
-        location: "National Museum in Warsaw",
-        coords: [52.23167, 21.02472],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Edvard_Munch%2C_Dødskamp.JPG/330px-Edvard_Munch%2C_Dødskamp.JPG"
-    },
-    {
-        artwork: "Madonna",
-        location: "National Museum in Warsaw",
-        coords: [52.23167, 21.02472],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Edvard_Munch_-_Madonna_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Madonna_-_Google_Art_Project.jpg"
-    },
-    {
-        artwork: "Marats død",
-        location: "Birmingham Museum & Art Gallery",
-        coords: [52.4788, -1.8960],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Edvard_Munch_-_The_Death_of_Marat_-_MM.M.00351_-_Munch_Museum.jpg/330px-Edvard_Munch_-_The_Death_of_Marat_-_MM.M.00351_-_Munch_Museum.jpg"
-    },
-    {
-        artwork: "Kvinnen",
-        location: "Manchester Art Gallery",
-        coords: [53.4808, -2.2379],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Edvard_Munch_-_Woman_-_MM.M.00375_-_Munch_Museum.jpg/330px-Edvard_Munch_-_Woman_-_MM.M.00375_-_Munch_Museum.jpg"
-    },
-    {
-        artwork: "Døden i sykeværelset",
-        location: "Musée Matisse",
-        coords: [43.2886, 5.3840],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Edvard_Munch_-_Death_in_the_Sickroom.jpg/330px-Edvard_Munch_-_Death_in_the_Sickroom.jpg"
-
-    },
-    {
-        artwork: "Fortvilelse",
-        location: "Trondheim kunstmuseum",
-        coords: [63.4270, 10.3951],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Edvard_Munch_-_Despair_%281894%29.jpg/250px-Edvard_Munch_-_Despair_%281894%29.jpg"
-    },
-    {
-        artwork: "Døden og barnet",
-        location: "Munch-museet",
-        coords: [59.9070, 10.7525],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Munch%2C_The_dead_mother_and_the_child.jpg/330px-Munch%2C_The_dead_mother_and_the_child.jpg"
-    },
-    {
-        artwork: "Angst",
-        location: "Henie Onstad Kunstsenter",
-        coords: [59.8797, 10.4380],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Edvard_Munch_-_Anxiety_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Anxiety_-_Google_Art_Project.jpg"
-    },
-    {
-        artwork: "Selvportrett i helvette",
-        location: "Budapest",
-        coords: [47.4979, 19.0402],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Edvard_Munch_-_Self-Portrait_in_Hell_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Self-Portrait_in_Hell_-_Google_Art_Project.jpg"
-    },
-    {
-        artwork: "Døden og barnet",
-        location: "Museum voor Schone Kunsten Gent",
-        coords: [51.0569, 3.7174],
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Edvard_Munch_-_Death_and_the_Child_%281899%29%2C_Kunsthalle_Bremen.jpg/250px-Edvard_Munch_-_Death_and_the_Child_%281899%29%2C_Kunsthalle_Bremen.jpg"
-    }
+      { artwork:"Vinternatt", location:"Hamburger Kunsthalle", coords:[53.5552936,10.0030010953872], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Edvard_Munch_-_Winter_Night_-_MM.M.00456_-_Munch_Museum.jpg/330px-Edvard_Munch_-_Winter_Night_-_MM.M.00456_-_Munch_Museum.jpg" },
+      { artwork:"Natt i Saint Cloud", location:"Guggenheim Bilbao Museum", coords:[43.2691,-2.9340], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Edvard_Munch_-_Night_in_Saint-Cloud_%281890%29%2C_NG.M.01111.jpg/500px-Edvard_Munch_-_Night_in_Saint-Cloud_%281890%29%2C_NG.M.01111.jpg" },
+      { artwork:"Vampyr", location:"Hjemme", coords:[59.90953131942386,10.523799997891706], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Edvard_Munch_-_Vampire_%281895%29_-_Google_Art_Project.jpg/960px-Edvard_Munch_-_Vampire_%281895%29_-_Google_Art_Project.jpg" },
+      { artwork:"Aften på Karl Johan", location:"Berlinische Galerie", coords:[52.5039,13.39823], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Evening_on_Karl_Johan_Street.jpg/330px-Evening_on_Karl_Johan_Street.jpg" },
+      { artwork:"På operasjonsbordet", location:"Berlinische Galerie", coords:[52.5039,13.39823], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Edvard_Munch_-_On_the_Operating_Table_-_MM.M.00022_-_Munch_Museum.jpg/330px-Edvard_Munch_-_On_the_Operating_Table_-_MM.M.00022_-_Munch_Museum.jpg" },
+      { artwork:"Dødskamp", location:"National Museum in Warsaw", coords:[52.23167,21.02472], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Edvard_Munch%2C_Dødskamp.JPG/330px-Edvard_Munch%2C_Dødskamp.JPG" },
+      { artwork:"Madonna", location:"National Museum in Warsaw", coords:[52.23167,21.02472], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Edvard_Munch_-_Madonna_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Madonna_-_Google_Art_Project.jpg" },
+      { artwork:"Marats død", location:"Birmingham Museum & Art Gallery", coords:[52.4788,-1.8960], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Edvard_Munch_-_The_Death_of_Marat_-_MM.M.00351_-_Munch_Museum.jpg/330px-Edvard_Munch_-_The_Death_of_Marat_-_MM.M.00351_-_Munch_Museum.jpg" },
+      { artwork:"Kvinnen", location:"Manchester Art Gallery", coords:[53.4808,-2.2379], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Edvard_Munch_-_Woman_-_MM.M.00375_-_Munch_Museum.jpg/330px-Edvard_Munch_-_Woman_-_MM.M.00375_-_Munch_Museum.jpg" },
+      { artwork:"Døden i sykeværelset", location:"Musée Matisse", coords:[43.2886,5.3840], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Edvard_Munch_-_Death_in_the_Sickroom.jpg/330px-Edvard_Munch_-_Death_in_the_Sickroom.jpg" },
+      { artwork:"Fortvilelse", location:"Trondheim kunstmuseum", coords:[63.4270,10.3951], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Edvard_Munch_-_Despair_%281894%29.jpg/250px-Edvard_Munch_-_Despair_%281894%29.jpg" },
+      { artwork:"Døden og barnet", location:"Munch-museet", coords:[59.9070,10.7525], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Munch%2C_The_dead_mother_and_the_child.jpg/330px-Munch%2C_The_dead_mother_and_the_child.jpg" },
+      { artwork:"Angst", location:"Henie Onstad Kunstsenter", coords:[59.8797,10.4380], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Edvard_Munch_-_Anxiety_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Anxiety_-_Google_Art_Project.jpg" },
+      { artwork:"Selvportrett i helvette", location:"Budapest", coords:[47.4979,19.0402], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Edvard_Munch_-_Self-Portrait_in_Hell_-_Google_Art_Project.jpg/250px-Edvard_Munch_-_Self-Portrait_in_Hell_-_Google_Art_Project.jpg" },
+      { artwork:"Døden og barnet", location:"Museum voor Schone Kunsten Gent", coords:[51.0569,3.7174], img:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Edvard_Munch_-_Death_and_the_Child_%281899%29%2C_Kunsthalle_Bremen.jpg/250px-Edvard_Munch_-_Death_and_the_Child_%281899%29%2C_Kunsthalle_Bremen.jpg" }
     ];
 
-    // DivIcon for ren, pulserende markør
-    const dotIcon = L.divIcon({
-      className: 'pulse-marker',
-      iconSize: [14, 14],
-      iconAnchor: [7, 7]
-    });
+    /* ----------------- Markører & popups ----------------- */
+    const dotIcon = L.divIcon({ className:'pulse-marker', iconSize:[14,14], iconAnchor:[7,7] });
 
-    // Legg til markører og popups
     const markers = points.map(p => {
       const m = L.marker(p.coords, { icon: dotIcon }).addTo(map);
       const popupHtml = `
         <div class="art-popup">
           <h3>${p.artwork}</h3>
-          <p>${p.location}<p/>
+          <p style="margin:0 0 8px">${p.location}</p>
           <img alt="Maleribilde for ${p.artwork}" src="${p.img}">
         </div>`;
-      const POPUP_OPTS = {
-        autoPan: true,
-        keepInView: true,
-        // justér tallene til høyden/bredden på topbaren din
-        autoPanPaddingTopLeft: [12, 80],
-        autoPanPaddingBottomRight: [12, 12],
-        closeButton: true
-      };
-      m.bindPopup(popupHtml, POPUP_OPTS);
+      m.bindPopup(popupHtml, {
+        autoPan: true, keepInView: true, closeButton:true
+      });
+      // Når popup åpnes: pan innsiden m/ padding i bunn = sheet-høyde
+      m.on('click', () => {
+        const z = Math.max(map.getZoom(), 13);
+        map.setView(p.coords, z, { animate: true });
+        setTimeout(() => {
+          m.openPopup();
+          panForSheet(p.coords);
+        }, 0);
+      });
       return m;
     });
 
-    // Fit til alle punkter ved oppstart
     const group = L.featureGroup(markers);
     map.fitBounds(group.getBounds().pad(0.2));
 
-    // UI-knapper
+    // Når en vilkårlig popup åpnes (inkl. via listeklikk)
+    map.on('popupopen', (e) => panForSheet(e.popup.getLatLng()));
+
+    function panForSheet(latlng){
+      const padY = getSheetHeight() + 16; // litt margin
+      map.panInside(latlng, { paddingBottomRight: [12, padY], paddingTopLeft: [12, 12], animate: true });
+    }
+
+    /* ----------------- Liste i sheet ----------------- */
+    const listEl = document.getElementById('artList');
+    points.forEach((p, idx) => {
+      const li = document.createElement('li');
+      li.className = 'list-item';
+      li.innerHTML = `
+        <div>
+          <div class="list-title">${p.artwork}</div>
+          <div class="list-sub">${p.location}</div>
+        </div>
+        <button class="btn go">Vis</button>
+      `;
+      li.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+
+        const m = markers[idx];
+        const z = Math.max(map.getZoom(), 13);
+
+        // Lukk sheetet først for å gi kartet full høyde
+        closeSheet();
+
+        // Fly til punktet og åpne popup når vi er fremme
+        map.flyTo(p.coords, z, { duration: .6 });
+        map.once('moveend', () => {
+          m.openPopup();
+          // siden sheet allerede er lukket, trenger vi ikke ekstra padding her
+        });
+      });
+      listEl.appendChild(li);
+    });
+
+    /* ----------------- UI-knapper ----------------- */
     document.getElementById('btnFit').addEventListener('click', () => {
       map.fitBounds(group.getBounds().pad(0.2));
     });
 
-    // Fullscreen toggle
-    const mapEl = document.getElementById('map');
-    function locateMe() {
-        console.log(myCircle)
-        myCircle.setStyle({ opacity: 0, fillOpacity: 0 })
-        if (myPosition) {
-            map.flyTo(
-                myPosition,
-                10,
-                { duration: .5 }
-            )
-        } else {
-            console.log("myPosition is unknown: ", myPosition)
-        }
-          map.once('zoomend', () => {
-            myCircle.setStyle({ 
-              opacity: 1,
-              fillOpacity: 0.9
-            });
-        });
-    }
-    document.getElementById('btnLocate').addEventListener('click', locateMe);
+    document.getElementById('btnLocate').addEventListener('click', () => {
+      if (!myPosition) return;
+      if (myCircle) myCircle.setStyle({ opacity: 0, fillOpacity: 0 });
+      map.flyTo(myPosition, Math.max(map.getZoom(), 15), { duration: .5 });
+      map.once('zoomend', () => {
+        if (myCircle) myCircle.setStyle({ opacity: 1, fillOpacity: 0.9 });
+      });
+    });
 
-    // Dobbelttrykk for fullskjerm (mobil)
-    // let lastTap = 0;
-    // mapEl.addEventListener('touchend', () => {
-    //   const now = Date.now();
-    //   if (now - lastTap < 350) locateMe();
-    //   lastTap = now;
-    // }, { passive: true });
+    /* ----------------- Dragbar bottom sheet ----------------- */
+    const sheet = document.getElementById('sheet');
+    const header = document.getElementById('sheetHeader');
+    const handle = document.getElementById('handle');
+
+    const MIN_H = 64;                       // lukket
+    const MID_H = Math.round(window.innerHeight * 0.35);
+    const MAX_H = Math.round(window.innerHeight * 0.85);
+
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+    function getSheetHeight(){ return parseInt(sheet.style.height || MIN_H, 10); }
+
+    let startY=0, startH=MIN_H, dragging=false;
+
+    function onPointerDown(e){
+      dragging = true;
+      sheet.classList.add('dragging');
+      startY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+      startH = getSheetHeight();
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp, { once:true });
+    }
+    function onPointerMove(e){
+      if(!dragging) return;
+      const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+      const dy = startY - y; // dra opp = positivt
+      const next = clamp(startH + dy, MIN_H, MAX_H);
+      sheet.style.height = next + 'px';
+    }
+    function onPointerUp(){
+      dragging = false;
+      sheet.classList.remove('dragging');
+      // snap til nærmeste (min/mid/max)
+      const h = getSheetHeight();
+      const targets = [MIN_H, MID_H, MAX_H];
+      const snap = targets.reduce((a,b)=> Math.abs(b-h) < Math.abs(a-h) ? b : a, targets[0]);
+      sheet.style.height = snap + 'px';
+    }
+    
+    function closeSheet() {
+      sheet.style.height = MIN_H + 'px';
+    }
+
+    // Gjør både header og handle dragbare
+    ;[header, handle].forEach(el => {
+      el.style.cursor = 'grab';
+      el.addEventListener('pointerdown', onPointerDown);
+    });
+
+    // Oppdater maks-høyde ved resize (rotasjon etc.)
+    window.addEventListener('resize', () => {
+      const h = getSheetHeight();
+      const newMax = Math.round(window.innerHeight * 0.85);
+      const newMid = Math.round(window.innerHeight * 0.35);
+      if (h > newMax) sheet.style.height = newMax + 'px';
+    });
+
+    // Åpne sheet til "mid" ved første scroll i body, valgfritt:
+    // sheet.style.height = MID_H + 'px';
+
+    // For at scrolling inne i sheet skal fungere fint på mobil
+    const sheetBody = document.getElementById('sheetBody');
+    sheetBody.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive:true });
+
   </script>
 </body>
 </html>
