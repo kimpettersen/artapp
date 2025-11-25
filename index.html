@@ -260,6 +260,9 @@
     points.forEach((p, idx) => {
       const li = document.createElement('li');
       li.className = 'list-item';
+      if (p.warn == undefined) {
+        p.warn = ""
+      }
       li.innerHTML = `
         <div>
           <div class="list-title">${p.artwork}</div>
